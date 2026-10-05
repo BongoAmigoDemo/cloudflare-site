@@ -69,7 +69,7 @@ const FEEDS = [
         return new Response(JSON.stringify({
           count: items.length,
           errors: errors,
-          items: items.slice(0, 20),
+          items: items.slice(0, 30),
         }, null, 2), {
           headers: {
             'Content-Type': 'application/json',
