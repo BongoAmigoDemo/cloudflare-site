@@ -23,28 +23,6 @@
       image-rendering: pixelated;
     }
 
-    .bubble-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #cbd5e1;
-}
-
-.more-link {
-  color: #0284c7;
-  text-decoration: none;
-  font-size: 0.5rem;
-  white-space: nowrap;
-  border-bottom: 2px solid transparent;
-}
-
-.more-link:hover {
-  border-bottom-color: #0284c7;
-}
-
     .studio {
       position: relative;
       width: 100%;
@@ -57,24 +35,24 @@
       image-rendering: pixelated;
     }
 
-.anchors {
-  position: absolute;
-  bottom: 10%;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  gap: 3rem;
-  z-index: 2;
-}
+    .anchors {
+      position: absolute;
+      bottom: 10%;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      z-index: 2;
+    }
 
-.anchor {
-  width: 30%;
-  max-width: 180px;
-  height: auto;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.4));
-}
+    .anchor {
+      width: 30%;
+      max-width: 180px;
+      height: auto;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.4));
+    }
 
     .anchor.talking {
       animation: bob 0.4s ease-in-out infinite alternate;
@@ -146,45 +124,42 @@
       image-rendering: pixelated;
     }
 
-    /* Default (centered) tail */
-.speech-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 12px solid transparent;
-  border-right: 12px solid transparent;
-  border-top: 18px solid #0f172a;
-}
-.speech-bubble::before {
-  content: '';
-  position: absolute;
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-top: 14px solid #f8fafc;
-  z-index: 1;
-}
+    /* Speech bubble tail — default position (centered) */
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-top: 18px solid #0f172a;
+      transition: left 0.4s ease;
+    }
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 14px solid #f8fafc;
+      z-index: 1;
+      transition: left 0.4s ease;
+    }
 
-/* Tail pointing left (anchor 1 talking) */
-.bubble-wrap.speaking-left .speech-bubble::after { left: 25%; }
-.bubble-wrap.speaking-left .speech-bubble::before { left: 25%; }
+    /* Tail points left when anchor 1 talks */
+    .bubble-wrap.speaking-left .speech-bubble::after { left: 25%; }
+    .bubble-wrap.speaking-left .speech-bubble::before { left: 25%; }
 
-/* Tail pointing right (anchor 2 talking) */
-.bubble-wrap.speaking-right .speech-bubble::after { left: 75%; }
-.bubble-wrap.speaking-right .speech-bubble::before { left: 75%; }
-
-    .speech-bubble::after,
-.speech-bubble::before {
-  transition: left 0.4s ease;
-}
+    /* Tail points right when anchor 2 talks */
+    .bubble-wrap.speaking-right .speech-bubble::after { left: 75%; }
+    .bubble-wrap.speaking-right .speech-bubble::before { left: 75%; }
 
     .speech-bubble.pop {
       animation: popIn 0.35s ease-out;
@@ -195,11 +170,32 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
+    .bubble-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid #cbd5e1;
+    }
+
     .source-line {
-      display: block;
-      margin-top: 0.5rem;
       font-size: 0.5rem;
       color: #64748b;
+    }
+
+    .more-link {
+      color: #0284c7;
+      text-decoration: none;
+      font-size: 0.5rem;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    .more-link:hover {
+      border-bottom-color: #0284c7;
     }
 
     .controls {
@@ -241,14 +237,14 @@
     <div class="breaking" id="breaking">BREAKING</div>
 
     <div class="bubble-wrap">
-
-<div class="speech-bubble" id="bubble">
-  <span id="dialogue">Loading tonight's headlines...</span>
-  <div class="bubble-footer">
-    <span class="source-line" id="sourceLine"></span>
-    <a id="moreLink" class="more-link" href="#" target="news-reader" rel="noopener">Here's more news →</a>
-  </div>
-</div>
+      <div class="speech-bubble" id="bubble">
+        <span id="dialogue">Loading tonight's headlines...</span>
+        <div class="bubble-footer">
+          <span class="source-line" id="sourceLine"></span>
+          <a id="moreLink" class="more-link" href="#" target="news-reader">Here's more news →</a>
+        </div>
+      </div>
+    </div>
 
     <div class="anchors">
       <img src="/assets/anchor1.png" alt="Anchor 1" class="anchor" id="anchor1" />
@@ -273,14 +269,17 @@
     let currentIndex = 0;
     let paused = false;
     let cycleTimer = null;
+    let typeTimer = null;
 
     const bubble = document.getElementById('bubble');
     const dialogue = document.getElementById('dialogue');
     const sourceLine = document.getElementById('sourceLine');
+    const moreLink = document.getElementById('moreLink');
     const breaking = document.getElementById('breaking');
     const anchor1 = document.getElementById('anchor1');
     const anchor2 = document.getElementById('anchor2');
     const pauseBtn = document.getElementById('pauseBtn');
+    const bubbleWrap = document.querySelector('.bubble-wrap');
 
     const CYCLE_MS = 9000;
 
@@ -305,17 +304,15 @@
       const item = headlines[(index + headlines.length) % headlines.length];
       const text = item.summary || item.description || item.title;
 
-// Alternate which anchor is "talking"
-const talkingAnchor = index % 2 === 0 ? anchor1 : anchor2;
-const quietAnchor = index % 2 === 0 ? anchor2 : anchor1;
-talkingAnchor.classList.add('talking');
-quietAnchor.classList.remove('talking');
+      // Alternate which anchor is "talking"
+      const talkingAnchor = index % 2 === 0 ? anchor1 : anchor2;
+      const quietAnchor = index % 2 === 0 ? anchor2 : anchor1;
+      talkingAnchor.classList.add('talking');
+      quietAnchor.classList.remove('talking');
 
-// Move the speech bubble tail to point at the speaker
-const bubbleWrap = document.querySelector('.bubble-wrap');
-bubbleWrap.classList.remove('speaking-left', 'speaking-right');
-bubbleWrap.classList.add(index % 2 === 0 ? 'speaking-left' : 'speaking-right');
-      
+      // Move the speech bubble tail to point at the speaker
+      bubbleWrap.classList.remove('speaking-left', 'speaking-right');
+      bubbleWrap.classList.add(index % 2 === 0 ? 'speaking-left' : 'speaking-right');
 
       // Trigger bubble pop animation
       bubble.classList.remove('pop');
@@ -325,11 +322,11 @@ bubbleWrap.classList.add(index % 2 === 0 ? 'speaking-left' : 'speaking-right');
       // Type out the dialogue character by character
       typeText(text, 18);
 
+      // Source + timestamp
       sourceLine.textContent = `${sourceName(item.source)}  •  ${timeAgo(item.pubDate)}`;
 
-      // Update the "Here's more news" link
-const moreLink = document.getElementById('moreLink');
-moreLink.href = item.link;
+      // "Here's more news" link — reuses a single tab named 'news-reader'
+      moreLink.href = item.link || '#';
 
       // Show "BREAKING" for stories under 2 hours old
       const ageHours = (Date.now() - new Date(item.pubDate).getTime()) / 3600000;
@@ -340,7 +337,6 @@ moreLink.href = item.link;
       }
     }
 
-    let typeTimer = null;
     function typeText(text, speedMs) {
       clearInterval(typeTimer);
       dialogue.textContent = '';
