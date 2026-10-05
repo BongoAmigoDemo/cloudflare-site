@@ -4,6 +4,11 @@ async function loadAiNews() {
 
   try {
     const response = await fetch('/api/news');
+    
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}`);
+    }
+    
     const newsItems = await response.json();
 
     if (!Array.isArray(newsItems) || newsItems.length === 0) {
