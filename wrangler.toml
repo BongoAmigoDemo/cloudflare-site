@@ -1,3 +1,4 @@
+# wrangler.toml
 name = "cloudflare-site"
 main = "worker.js"
 compatibility_date = "2025-01-01"
@@ -6,6 +7,11 @@ compatibility_date = "2025-01-01"
 directory = "./"
 binding = "ASSETS"
 
-# Add this section
 [ai]
 binding = "AI"
+
+# Add this D1 binding
+[[d1_databases]]
+binding = "DB"
+database_name = "news-cache"
+database_id = "YOUR_DATABASE_ID_HERE" # Replace with your actual ID
