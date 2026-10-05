@@ -71,19 +71,50 @@ export default {
 
       allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
-// In your worker.js, replace the summary generation block with this:
+      // Generate summaries for the first 5 articles using the cache
+      const itemsWithSummaries = await Promise.all(
+        allItems.slice(0, 5).map(async (item) => {
+          const summary = await getOrCreateSummary(item.title, item.link, env);
+          return { ...item, summary };
+        })
+      );
 
+      const remainingItems = allItems.slice(5, 30);
+      const finalItems = [...itemsWithSummaries, ...remainingItems];
+
+      return new Response(JSON.stringify({
+        count: allItems.length,
+        errors: errors,
+        items: finalItems,
+      }, null, 2), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=1800',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+
+    return env.ASSETS.fetch(request);
+  },
+};
+
+// --- Helper: Get cached summary from D1, or generate + save if missing ---
 async function getOrCreateSummary(title, link, env) {
   // 1. Check the D1 cache first
-  const existing = await env.DB.prepare(
-    "SELECT summary FROM summaries WHERE url = ?"
-  ).bind(link).first();
+  try {
+    const existing = await env.DB.prepare(
+      "SELECT summary FROM summaries WHERE url = ?"
+    ).bind(link).first();
 
-  if (existing) {
-    return existing.summary; // Cache hit! 0 AI cost.
+    if (existing && existing.summary) {
+      return existing.summary; // Cache hit — 0 AI cost
+    }
+  } catch (err) {
+    // If D1 fails, continue to AI rather than crash the request
   }
 
-  // 2. Cache miss: Call AI
+  // 2. Cache miss — call AI
   if (!env.AI) return 'AI binding missing';
 
   try {
@@ -98,15 +129,16 @@ async function getOrCreateSummary(title, link, env) {
     const summary = response.response || 'Summary unavailable';
 
     // 3. Save to D1 for next time
-    await env.DB.prepare(
-      "INSERT OR REPLACE INTO summaries (url, summary) VALUES (?, ?)"
-    ).bind(link, summary).run();
+    try {
+      await env.DB.prepare(
+        "INSERT OR REPLACE INTO summaries (url, summary) VALUES (?, ?)"
+      ).bind(link, summary).run();
+    } catch (err) {
+      // If saving fails, still return the summary
+    }
 
     return summary;
   } catch (err) {
     return `AI error: ${String(err)}`;
   }
 }
-
-// Then, update your fetch handler to call this new function:
-// const summary = await getOrCreateSummary(item.title, item.link, env);
