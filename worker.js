@@ -10,7 +10,6 @@ export default {
         'https://openai.com/blog/rss.xml',
       ];
 
-      // Fetch each feed independently — one failure won't kill the whole request
       const results = await Promise.allSettled(
         FEEDS.map(feedUrl =>
           fetch(feedUrl, {
@@ -18,9 +17,14 @@ export default {
               'User-Agent': 'Mozilla/5.0 (compatible; AI-News-Aggregator/1.0)',
               'Accept': 'application/rss+xml, application/xml, text/xml, */*',
             },
-          }).then(res => {
-            if (!res.ok) throw new Error(`Feed returned ${res.status}`);
-            return res.text();
+          }).then(async res => {
+            if (!res.ok) throw new Error(`Feed ${feedUrl} returned ${res.status}`);
+            const text = await res.text();
+            // Validate: must actually contain XML items
+            if (!text.includes('<item>') && !text.includes('<entry>')) {
+              throw new Error(`Feed ${feedUrl} did not return valid RSS`);
+            }
+            return text;
           })
         )
       );
@@ -28,8 +32,7 @@ export default {
       const allItems = [];
 
       for (const result of results) {
-        if (result.status !== 'fulfilled') continue; // skip failed feeds
-
+        if (result.status !== 'fulfilled') continue;
         const xml = result.value;
         const itemRegex = /<item>([\s\S]*?)<\/item>/g;
         let match;
@@ -66,7 +69,6 @@ export default {
       });
     }
 
-    // Serve static assets for everything else
     return env.ASSETS.fetch(request);
   },
 };
