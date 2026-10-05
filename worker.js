@@ -4,12 +4,13 @@ export default {
 
     if (url.pathname === '/api/news') {
       try {
-        const FEEDS = [
-          'https://techcrunch.com/category/artificial-intelligence/feed/',
-          'https://www.theverge.com/ai-artificial-intelligence/rss/index.xml',
-          'https://venturebeat.com/ai/feed/',
-          'https://openai.com/blog/rss.xml',
-        ];
+const FEEDS = [
+  'https://techcrunch.com/category/artificial-intelligence/feed/',
+  'https://openai.com/blog/rss.xml',
+  'https://www.artificialintelligence-news.com/feed/',
+  'https://syncedreview.com/feed/',
+  'https://www.marktechpost.com/feed/',
+];
 
         const feedResults = [];
 
