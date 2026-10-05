@@ -185,18 +185,24 @@
       color: #64748b;
     }
 
-    .more-link {
-      color: #0284c7;
-      text-decoration: none;
-      font-size: 0.5rem;
-      white-space: nowrap;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-    }
+.more-link {
+  color: #0284c7;
+  text-decoration: none;
+  font-size: 0.5rem;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
 
-    .more-link:hover {
-      border-bottom-color: #0284c7;
-    }
+.more-link.visible {
+  opacity: 1;
+}
+
+.more-link:hover {
+  border-bottom-color: #0284c7;
+}
 
     .controls {
       margin-top: 1.5rem;
@@ -322,11 +328,17 @@
       // Type out the dialogue character by character
       typeText(text, 18);
 
-      // Source + timestamp
       sourceLine.textContent = `${sourceName(item.source)}  •  ${timeAgo(item.pubDate)}`;
 
-      // "Here's more news" link — reuses a single tab named 'news-reader'
+      // Hide the link at the start of each story
+      moreLink.classList.remove('visible');
       moreLink.href = item.link || '#';
+      moreLink.textContent = "And here's your browser with the story →";
+
+      // Type out the dialogue, then reveal the link
+      typeText(text, 18, () => {
+        moreLink.classList.add('visible');
+      });
 
       // Show "BREAKING" for stories under 2 hours old
       const ageHours = (Date.now() - new Date(item.pubDate).getTime()) / 3600000;
@@ -337,16 +349,19 @@
       }
     }
 
-    function typeText(text, speedMs) {
+function typeText(text, speedMs, onComplete) {
+  clearInterval(typeTimer);
+  dialogue.textContent = '';
+  let i = 0;
+  typeTimer = setInterval(() => {
+    dialogue.textContent += text[i];
+    i++;
+    if (i >= text.length) {
       clearInterval(typeTimer);
-      dialogue.textContent = '';
-      let i = 0;
-      typeTimer = setInterval(() => {
-        dialogue.textContent += text[i];
-        i++;
-        if (i >= text.length) clearInterval(typeTimer);
-      }, speedMs);
+      if (onComplete) onComplete();
     }
+  }, speedMs);
+}
 
     function nextStory() {
       currentIndex++;
