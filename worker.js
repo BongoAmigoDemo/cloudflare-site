@@ -5,38 +5,40 @@ const FEEDS = [
   'https://syncedreview.com/feed/',
   'https://www.marktechpost.com/feed/',
 ];
-//comment//
+
 export default {
   // --- Fast read from D1 for the frontend ---
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname === '/api/news') {
-      try {
-        const { results } = await env.DB.prepare(
-          `SELECT title, link, pub_date AS pubDate, description, source, summary
-           FROM articles
-           ORDER BY pub_date DESC
-           LIMIT 30`
-        ).all();
+if (url.pathname === '/api/news') {
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT title, link, pub_date AS pubDate, description, source, summary
+       FROM articles
+       LIMIT 200`
+    ).all();
 
-        return new Response(JSON.stringify({
-          count: results.length,
-          items: results,
-        }, null, 2), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=300',
-            'Access-Control-Allow-Origin': '*',
-          },
-        });
-      } catch (err) {
-        return new Response(JSON.stringify({ error: String(err) }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-    }
+    // Sort by date in JavaScript (handles RSS date strings correctly)
+    results.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+    return new Response(JSON.stringify({
+      count: results.length,
+      items: results.slice(0, 30),
+    }, null, 2), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=300',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
 
     if (url.pathname === '/api/test-refresh') {
   await refreshArticles(env);
