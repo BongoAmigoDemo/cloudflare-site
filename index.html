@@ -124,32 +124,45 @@
       image-rendering: pixelated;
     }
 
-    .speech-bubble::after {
-      content: '';
-      position: absolute;
-      bottom: -18px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 12px solid transparent;
-      border-right: 12px solid transparent;
-      border-top: 18px solid #0f172a;
-    }
+    /* Default (centered) tail */
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 18px solid #0f172a;
+}
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 14px solid #f8fafc;
+  z-index: 1;
+}
 
-    .speech-bubble::before {
-      content: '';
-      position: absolute;
-      bottom: -12px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-top: 14px solid #f8fafc;
-      z-index: 1;
-    }
+/* Tail pointing left (anchor 1 talking) */
+.bubble-wrap.speaking-left .speech-bubble::after { left: 25%; }
+.bubble-wrap.speaking-left .speech-bubble::before { left: 25%; }
+
+/* Tail pointing right (anchor 2 talking) */
+.bubble-wrap.speaking-right .speech-bubble::after { left: 75%; }
+.bubble-wrap.speaking-right .speech-bubble::before { left: 75%; }
+
+    .speech-bubble::after,
+.speech-bubble::before {
+  transition: left 0.4s ease;
+}
 
     .speech-bubble.pop {
       animation: popIn 0.35s ease-out;
