@@ -1,4 +1,3 @@
-# wrangler.toml
 name = "cloudflare-site"
 main = "worker.js"
 compatibility_date = "2025-01-01"
@@ -10,8 +9,10 @@ binding = "ASSETS"
 [ai]
 binding = "AI"
 
-# Add this D1 binding
 [[d1_databases]]
 binding = "DB"
 database_name = "news-cache"
-database_id = "3ed13229-f392-45a0-84c6-1970b62a0331"
+database_id = "your-id-here"
+
+[triggers]
+crons = ["0 * * * *"]
