@@ -37,55 +37,52 @@ export default {
           const itemRegex = /<item>([\s\S]*?)<\/item>/g;
           let match;
 
-const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-let match;
+          while ((match = itemRegex.exec(text)) !== null) {
+            const itemXml = match[1];
+            const getTag = (str, tag) => {
+              const m = str.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+              if (!m) return '';
+              return m[1]
+                .replace(/<!\[CDATA\[|\]\]>/g, '')
+                .replace(/<[^>]*>/g, '')
+                .replace(/&#8216;/g, "'")
+                .replace(/&#8217;/g, "'")
+                .replace(/&#8220;/g, '"')
+                .replace(/&#8221;/g, '"')
+                .replace(/&amp;/g, '&')
+                .replace(/&quot;/g, '"')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&#\d+;/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            };
 
-while ((match = itemRegex.exec(text)) !== null) {
-  const itemXml = match[1];
-  const getTag = (str, tag) => {
-    const m = str.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
-    if (!m) return '';
-    return m[1]
-      .replace(/<!\[CDATA\[|\]\]>/g, '')
-      .replace(/<[^>]*>/g, '')
-      .replace(/&#8216;/g, "'")
-      .replace(/&#8217;/g, "'")
-      .replace(/&#8220;/g, '"')
-      .replace(/&#8221;/g, '"')
-      .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&#\d+;/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
+            const title = getTag(itemXml, 'title');
+            const link = getTag(itemXml, 'link');
+            const pubDate = getTag(itemXml, 'pubDate');
 
-  const title = getTag(itemXml, 'title');
-  const link = getTag(itemXml, 'link');
-  const pubDate = getTag(itemXml, 'pubDate');
+            // Try every common description tag, in order of preference
+            let description = getTag(itemXml, 'content:encoded');
+            if (!description) description = getTag(itemXml, 'description');
+            if (!description) description = getTag(itemXml, 'summary');
 
-  // Try every common description tag, in order of preference
-  let description = getTag(itemXml, 'content:encoded');
-  if (!description) description = getTag(itemXml, 'description');
-  if (!description) description = getTag(itemXml, 'summary');
+            // Cap very long descriptions to keep tokens reasonable
+            if (description.length > 600) {
+              description = description.slice(0, 600) + '...';
+            }
 
-  // If description is very long (full article), cap it to keep tokens reasonable
-  if (description.length > 600) {
-    description = description.slice(0, 600) + '...';
-  }
-
-  if (title && link) {
-    allItems.push({
-      title,
-      link,
-      pubDate,
-      description,
-      source: feedUrl,
-    });
-  }
-}
+            if (title && link) {
+              allItems.push({
+                title,
+                link,
+                pubDate,
+                description,
+                source: feedUrl,
+              });
+            }
+          }
         } catch (err) {
           errors.push({ url: feedUrl, error: String(err) });
         }
@@ -96,7 +93,7 @@ while ((match = itemRegex.exec(text)) !== null) {
       // Generate summaries for the first 5 articles using the cache
       const itemsWithSummaries = await Promise.all(
         allItems.slice(0, 5).map(async (item) => {
-          const summary = await getOrCreateSummary(item.title, item.link, env);
+          const summary = await getOrCreateSummary(item.title, item.description, item.link, env);
           return { ...item, summary };
         })
       );
@@ -122,7 +119,7 @@ while ((match = itemRegex.exec(text)) !== null) {
 };
 
 // --- Helper: Get cached summary from D1, or generate + save if missing ---
-async function getOrCreateSummary(title, link, env) {
+async function getOrCreateSummary(title, description, link, env) {
   // 1. Check the D1 cache first
   try {
     const existing = await env.DB.prepare(
@@ -139,11 +136,16 @@ async function getOrCreateSummary(title, link, env) {
   // 2. Cache miss — call AI
   if (!env.AI) return 'AI binding missing';
 
+  // Build a richer prompt if we have a description
+  const userContent = description
+    ? `Summarize this article in one clear, concise sentence.\n\nTitle: ${title}\n\nDescription: ${description}`
+    : `Summarize this headline in one clear, concise sentence: "${title}"`;
+
   try {
     const response = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
-        { role: 'system', content: 'You summarize news headlines in one clear, concise sentence.' },
-        { role: 'user', content: `Summarize this headline: "${title}"` },
+        { role: 'system', content: 'You are a news summarizer. Write one factual, concise sentence that captures the key point.' },
+        { role: 'user', content: userContent },
       ],
       max_tokens: 100,
     });
