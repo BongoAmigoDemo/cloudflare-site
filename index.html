@@ -3,60 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My AI-Built Site</title>
+  <title>Latest AI News</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>Hello, I'm <span class="highlight">Building with AI</span></h1>
-    <p class="subtitle">A simple site deployed on Cloudflare Pages</p>
+    <h1>Latest <span class="highlight">AI News</span></h1>
+    <p class="subtitle">Fresh headlines from around the web</p>
   </header>
 
   <main>
     <section class="card">
-      <h2>About</h2>
-      <p>This page was generated with AI and hosted for free. Click the button below to see it work.</p>
-      <button id="myButton">Click Me</button>
-      <p id="message"></p>
-    </section>
-
-    <section class="card">
-      <h2>What's Next?</h2>
-      <ul>
-        <li>Push this to GitHub</li>
-        <li>Connect it to Cloudflare Pages</li>
-        <li>Add a database later</li>
-      </ul>
+      <div id="news-list">Loading news...</div>
     </section>
   </main>
 
   <footer>
-    <p>&copy; 2026 My Site. Built with AI.</p>
+    <p>&copy; 2026 AI News. Built with AI.</p>
   </footer>
-// In your script.js
-async function loadAiNews() {
-  const newsContainer = document.getElementById('news-list'); // Make sure you have a <div id="news-list"></div> in your HTML
-  if (!newsContainer) return;
 
-  try {
-    const response = await fetch('/api/news'); // Calls your Cloudflare Function
-    const newsItems = await response.json();
-
-    newsContainer.innerHTML = newsItems.map(item => `
-      <div class="news-item">
-        <h3><a href="${item.link}" target="_blank">${item.title}</a></h3>
-        <p class="date">${new Date(item.pubDate).toLocaleDateString()}</p>
-      </div>
-    `).join('');
-
-  } catch (error) {
-    console.error('Error loading news:', error);
-    newsContainer.innerHTML = '<p>Could not load news at this time.</p>';
-  }
-}
-
-// Call this function when the page loads
-document.addEventListener('DOMContentLoaded', loadAiNews);
   <script src="script.js"></script>
 </body>
 </html>
