@@ -5,7 +5,7 @@ const FEEDS = [
   'https://syncedreview.com/feed/',
   'https://www.marktechpost.com/feed/',
 ];
-
+//comment//
 export default {
   // --- Fast read from D1 for the frontend ---
   async fetch(request, env) {
