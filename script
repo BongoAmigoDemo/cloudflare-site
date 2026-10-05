@@ -4,19 +4,17 @@ async function loadAiNews() {
 
   try {
     const response = await fetch('/api/news');
-    
-    if (!response.ok) {
-      throw new Error(`Server returned ${response.status}`);
-    }
-    
-    const newsItems = await response.json();
+    if (!response.ok) throw new Error(`Server returned ${response.status}`);
 
-    if (!Array.isArray(newsItems) || newsItems.length === 0) {
+    const data = await response.json();
+    const items = data.items || [];
+
+    if (items.length === 0) {
       newsContainer.innerHTML = '<p>No news found.</p>';
       return;
     }
 
-    newsContainer.innerHTML = newsItems.map(item => `
+    newsContainer.innerHTML = items.map(item => `
       <div class="news-item" style="margin-bottom: 1.25rem;">
         <h3 style="margin-bottom: 0.25rem;">
           <a href="${item.link}" target="_blank" rel="noopener" style="color: #38bdf8; text-decoration: none;">
