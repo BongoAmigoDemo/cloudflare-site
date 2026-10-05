@@ -71,41 +71,23 @@ export default {
 
       allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
-      // Generate summaries for the first 5 articles
-      const itemsWithSummaries = await Promise.all(
-        allItems.slice(0, 5).map(async (item) => {
-          const summary = await generateSummary(item.title, env);
-          return { ...item, summary };
-        })
-      );
+// In your worker.js, replace the summary generation block with this:
 
-      const remainingItems = allItems.slice(5, 30);
-      const finalItems = [...itemsWithSummaries, ...remainingItems];
+async function getOrCreateSummary(title, link, env) {
+  // 1. Check the D1 cache first
+  const existing = await env.DB.prepare(
+    "SELECT summary FROM summaries WHERE url = ?"
+  ).bind(link).first();
 
-      return new Response(JSON.stringify({
-        count: allItems.length,
-        errors: errors,
-        items: finalItems,
-      }, null, 2), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=1800',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
-    }
-
-    return env.ASSETS.fetch(request);
-  },
-};
-
-async function generateSummary(title, env) {
-  if (!env.AI) {
-    return 'AI binding missing';
+  if (existing) {
+    return existing.summary; // Cache hit! 0 AI cost.
   }
 
+  // 2. Cache miss: Call AI
+  if (!env.AI) return 'AI binding missing';
+
   try {
-      const response = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+    const response = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         { role: 'system', content: 'You summarize news headlines in one clear, concise sentence.' },
         { role: 'user', content: `Summarize this headline: "${title}"` },
@@ -113,12 +95,18 @@ async function generateSummary(title, env) {
       max_tokens: 100,
     });
 
-    if (!response || !response.response) {
-      return `AI returned unexpected shape: ${JSON.stringify(response)}`;
-    }
+    const summary = response.response || 'Summary unavailable';
 
-    return response.response;
+    // 3. Save to D1 for next time
+    await env.DB.prepare(
+      "INSERT OR REPLACE INTO summaries (url, summary) VALUES (?, ?)"
+    ).bind(link, summary).run();
+
+    return summary;
   } catch (err) {
     return `AI error: ${String(err)}`;
   }
 }
+
+// Then, update your fetch handler to call this new function:
+// const summary = await getOrCreateSummary(item.title, item.link, env);
