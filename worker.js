@@ -38,6 +38,16 @@ export default {
       }
     }
 
+    if (url.pathname === '/api/test-refresh') {
+  await refreshArticles(env);
+  const { results } = await env.DB.prepare(
+    "SELECT COUNT(*) AS total FROM articles"
+  ).all();
+  return new Response(`Refresh complete. ${results[0].total} articles in DB.`, {
+    status: 200,
+  });
+}
+
     return env.ASSETS.fetch(request);
   },
 
