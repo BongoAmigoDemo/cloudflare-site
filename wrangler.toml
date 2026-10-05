@@ -12,7 +12,7 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "news-cache"
-database_id = "your-id-here"
+database_id = "3ed13229-f392-45a0-84c6-1970b62a0331"
 
 [triggers]
 crons = ["0 * * * *"]
