@@ -37,33 +37,55 @@ export default {
           const itemRegex = /<item>([\s\S]*?)<\/item>/g;
           let match;
 
-          while ((match = itemRegex.exec(text)) !== null) {
-            const itemXml = match[1];
-            const getTag = (str, tag) => {
-              const m = str.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
-              if (!m) return '';
-              return m[1]
-                .replace(/<!\[CDATA\[|\]\]>/g, '')
-                .replace(/<[^>]*>/g, '')
-                .replace(/&#8216;/g, "'")
-                .replace(/&#8217;/g, "'")
-                .replace(/&#8220;/g, '"')
-                .replace(/&#8221;/g, '"')
-                .replace(/&amp;/g, '&')
-                .replace(/&quot;/g, '"')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>')
-                .trim();
-            };
+const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+let match;
 
-            const title = getTag(itemXml, 'title');
-            const link = getTag(itemXml, 'link');
-            const pubDate = getTag(itemXml, 'pubDate');
+while ((match = itemRegex.exec(text)) !== null) {
+  const itemXml = match[1];
+  const getTag = (str, tag) => {
+    const m = str.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+    if (!m) return '';
+    return m[1]
+      .replace(/<!\[CDATA\[|\]\]>/g, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&#8216;/g, "'")
+      .replace(/&#8217;/g, "'")
+      .replace(/&#8220;/g, '"')
+      .replace(/&#8221;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&#\d+;/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
 
-            if (title && link) {
-              allItems.push({ title, link, pubDate, source: feedUrl });
-            }
-          }
+  const title = getTag(itemXml, 'title');
+  const link = getTag(itemXml, 'link');
+  const pubDate = getTag(itemXml, 'pubDate');
+
+  // Try every common description tag, in order of preference
+  let description = getTag(itemXml, 'content:encoded');
+  if (!description) description = getTag(itemXml, 'description');
+  if (!description) description = getTag(itemXml, 'summary');
+
+  // If description is very long (full article), cap it to keep tokens reasonable
+  if (description.length > 600) {
+    description = description.slice(0, 600) + '...';
+  }
+
+  if (title && link) {
+    allItems.push({
+      title,
+      link,
+      pubDate,
+      description,
+      source: feedUrl,
+    });
+  }
+}
         } catch (err) {
           errors.push({ url: feedUrl, error: String(err) });
         }
