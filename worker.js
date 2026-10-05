@@ -105,7 +105,7 @@ async function generateSummary(title, env) {
   }
 
   try {
-    const response = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      const response = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         { role: 'system', content: 'You summarize news headlines in one clear, concise sentence.' },
         { role: 'user', content: `Summarize this headline: "${title}"` },
