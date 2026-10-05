@@ -33,7 +33,30 @@
   <footer>
     <p>&copy; 2026 My Site. Built with AI.</p>
   </footer>
+// In your script.js
+async function loadAiNews() {
+  const newsContainer = document.getElementById('news-list'); // Make sure you have a <div id="news-list"></div> in your HTML
+  if (!newsContainer) return;
 
+  try {
+    const response = await fetch('/api/news'); // Calls your Cloudflare Function
+    const newsItems = await response.json();
+
+    newsContainer.innerHTML = newsItems.map(item => `
+      <div class="news-item">
+        <h3><a href="${item.link}" target="_blank">${item.title}</a></h3>
+        <p class="date">${new Date(item.pubDate).toLocaleDateString()}</p>
+      </div>
+    `).join('');
+
+  } catch (error) {
+    console.error('Error loading news:', error);
+    newsContainer.innerHTML = '<p>Could not load news at this time.</p>';
+  }
+}
+
+// Call this function when the page loads
+document.addEventListener('DOMContentLoaded', loadAiNews);
   <script src="script.js"></script>
 </body>
 </html>
