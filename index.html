@@ -280,11 +280,17 @@
       const item = headlines[(index + headlines.length) % headlines.length];
       const text = item.summary || item.description || item.title;
 
-      // Alternate which anchor is "talking"
-      const talkingAnchor = index % 2 === 0 ? anchor1 : anchor2;
-      const quietAnchor = index % 2 === 0 ? anchor2 : anchor1;
-      talkingAnchor.classList.add('talking');
-      quietAnchor.classList.remove('talking');
+// Alternate which anchor is "talking"
+const talkingAnchor = index % 2 === 0 ? anchor1 : anchor2;
+const quietAnchor = index % 2 === 0 ? anchor2 : anchor1;
+talkingAnchor.classList.add('talking');
+quietAnchor.classList.remove('talking');
+
+// Move the speech bubble tail to point at the speaker
+const bubbleWrap = document.querySelector('.bubble-wrap');
+bubbleWrap.classList.remove('speaking-left', 'speaking-right');
+bubbleWrap.classList.add(index % 2 === 0 ? 'speaking-left' : 'speaking-right');
+      
 
       // Trigger bubble pop animation
       bubble.classList.remove('pop');
