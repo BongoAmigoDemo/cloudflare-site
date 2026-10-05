@@ -305,6 +305,10 @@ bubbleWrap.classList.add(index % 2 === 0 ? 'speaking-left' : 'speaking-right');
 
       sourceLine.textContent = `${sourceName(item.source)}  •  ${timeAgo(item.pubDate)}`;
 
+      // Update the "Here's more news" link
+const moreLink = document.getElementById('moreLink');
+moreLink.href = item.link;
+
       // Show "BREAKING" for stories under 2 hours old
       const ageHours = (Date.now() - new Date(item.pubDate).getTime()) / 3600000;
       if (ageHours < 2) {
