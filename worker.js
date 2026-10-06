@@ -24,7 +24,7 @@ if (url.pathname === '/api/news') {
 
     return new Response(JSON.stringify({
       count: results.length,
-      items: results.slice(0, 30),
+      items: results.slice(0, 10),
     }, null, 2), {
       headers: {
         'Content-Type': 'application/json',
