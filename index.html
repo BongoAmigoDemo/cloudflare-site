@@ -81,8 +81,14 @@
       left: 0;
       right: 0;
       height: 19%;
-      background: linear-gradient(180deg, #1a3460 0%, #0a1428 100%);
-      border-top: 4px solid #244882;
+      /* Two surfaces in one element: the top of the desk reads as lit grey
+         (lit from above), and the front face falls away into a blue gradient.
+         --surface-h controls where the top stops and the front begins. */
+      --surface-h: clamp(7px, 3.5%, 22px);
+      background:
+        linear-gradient(180deg, #d2d6da 0%, #98a1a8 55%, #7b848d 100%) top / 100% var(--surface-h) no-repeat,
+        linear-gradient(180deg, #4a7fac 0%, #2f5378 45%, #122440 100%) bottom / 100% calc(100% - var(--surface-h)) no-repeat;
+      border-top: 4px solid #e6eaee;
       z-index: 3;
     }
 
