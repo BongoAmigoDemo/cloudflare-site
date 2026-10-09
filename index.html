@@ -12,8 +12,8 @@
 
     body {
       font-family: 'Press Start 2P', monospace;
-      background: #0a0f1e;
-      color: #e2e8f0;
+      background: #0a1428;
+      color: #e8f4ff;
       min-height: 100vh;
       /* dvh keeps the layout correct under mobile browser chrome. The vh
          line above is the fallback for browsers without dvh support. */
@@ -39,8 +39,8 @@
       /* Capped so the stage, speech panel, controls and footer all fit. */
       max-height: 52vh;
       max-height: 52dvh;
-      background: #1e293b url('/assets/background.png') center/cover no-repeat;
-      border: 4px solid #334155;
+      background: #122440 url('/assets/background.png') center/cover no-repeat;
+      border: 4px solid #244882;
       border-radius: 8px;
       overflow: hidden;
       image-rendering: pixelated;
@@ -81,8 +81,8 @@
       left: 0;
       right: 0;
       height: 19%;
-      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-      border-top: 4px solid #334155;
+      background: linear-gradient(180deg, #1a3460 0%, #0a1428 100%);
+      border-top: 4px solid #244882;
       z-index: 3;
     }
 
@@ -90,12 +90,12 @@
       position: absolute;
       top: 1rem;
       left: 1rem;
-      background: #dc2626;
+      background: #a00028;
       color: #fff;
       padding: 0.4rem 0.8rem;
       font-size: 0.65rem;
       letter-spacing: 1px;
-      border: 2px solid #7f1d1d;
+      border: 2px solid #600018;
       z-index: 5;
       display: none;
     }
@@ -129,10 +129,10 @@
 
     .speech-bubble {
       position: relative;
-      background: #f8fafc;
-      color: #0f172a;
+      background: #e8f4ff;
+      color: #0a1428;
       padding: 0.9rem 1rem;
-      border: 4px solid #0f172a;
+      border: 4px solid #0a1428;
       border-radius: 10px;
       /* Readable at this size; the overlay layout could only afford 0.4rem. */
       font-size: 0.8rem;
@@ -154,7 +154,7 @@
       height: 0;
       border-left: 13px solid transparent;
       border-right: 13px solid transparent;
-      border-bottom: 19px solid #0f172a;
+      border-bottom: 19px solid #0a1428;
       transition: left 0.4s ease;
     }
     .speech-bubble::before {
@@ -167,7 +167,7 @@
       height: 0;
       border-left: 10px solid transparent;
       border-right: 10px solid transparent;
-      border-bottom: 14px solid #f8fafc;
+      border-bottom: 14px solid #e8f4ff;
       z-index: 1;
       transition: left 0.4s ease;
     }
@@ -198,16 +198,16 @@
       gap: 1rem;
       margin-top: 0.75rem;
       padding-top: 0.5rem;
-      border-top: 1px solid #cbd5e1;
+      border-top: 1px solid #3f7ac4;
     }
 
     .source-line {
       font-size: 0.65rem;
-      color: #64748b;
+      color: #244882;
     }
 
 .more-link {
-  color: #0284c7;
+  color: #3060a4;
   text-decoration: none;
   font-size: 0.65rem;
   white-space: nowrap;
@@ -222,7 +222,7 @@
 }
 
 .more-link:hover {
-  border-bottom-color: #0284c7;
+  border-bottom-color: #3060a4;
 }
 
     .controls {
@@ -236,20 +236,20 @@
       font-family: 'Press Start 2P', monospace;
       font-size: 0.55rem;
       padding: 0.6rem 1rem;
-      background: #38bdf8;
-      color: #0f172a;
-      border: 3px solid #0284c7;
+      background: #5596dc;
+      color: #0a1428;
+      border: 3px solid #3f7ac4;
       border-radius: 4px;
       cursor: pointer;
       box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
     }
 
-    .controls button:hover { background: #7dd3fc; }
+    .controls button:hover { background: #74b0ea; }
     .controls button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4); }
 
     footer {
       margin-top: 1.5rem;
-      color: #475569;
+      color: #3060a4;
       font-size: 0.5rem;
       text-align: center;
     }
@@ -302,7 +302,7 @@
         top: -14px;
         border-left-width: 10px;
         border-right-width: 10px;
-        border-bottom: 14px solid #0f172a;
+        border-bottom: 14px solid #0a1428;
       }
       .speech-bubble::before {
         top: -9px;
