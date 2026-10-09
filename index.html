@@ -15,12 +15,18 @@
       background: #0a0f1e;
       color: #e2e8f0;
       min-height: 100vh;
+      /* dvh keeps the layout correct under mobile browser chrome. The vh
+         line above is the fallback for browsers without dvh support. */
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 1rem;
       image-rendering: pixelated;
+      /* Allow scrolling rather than centring content off the top of the
+         viewport when the screen is too short (landscape phones). */
+      overflow-y: auto;
     }
 
     .studio {
@@ -28,11 +34,15 @@
       width: 100%;
       max-width: 720px;
       aspect-ratio: 16 / 11;
+      /* Never let the studio alone consume the viewport. */
+      max-height: 58vh;
+      max-height: 58dvh;
       background: #1e293b url('/assets/background.png') center/cover no-repeat;
       border: 4px solid #334155;
       border-radius: 8px;
       overflow: hidden;
       image-rendering: pixelated;
+      flex-shrink: 0;
     }
 
     .anchors {
@@ -208,6 +218,9 @@
       margin-top: 1.5rem;
       display: flex;
       gap: 0.75rem;
+      /* Absorbs leftover vertical space, so the studio stays directly under
+         the controls on tall screens instead of drifting to the middle. */
+      margin-bottom: auto;
     }
 
     .controls button {
@@ -232,9 +245,122 @@
       text-align: center;
     }
 
-    @media (max-width: 500px) {
-      .speech-bubble { font-size: 0.5rem; line-height: 1.6; }
-      .breaking { font-size: 0.55rem; }
+    /* Touch devices have no hover, so never hide the story link behind one. */
+    @media (hover: none) {
+      .more-link { opacity: 1; }
+    }
+
+    /* --- Phones --- */
+    @media (max-width: 700px) {
+      body { padding: 0.75rem; }
+
+      /* 4/3 matches the background art, so it fills the frame without the
+         letterboxing the 16/11 crop produced on narrow screens. */
+      .studio {
+        aspect-ratio: 4 / 3;
+        max-height: 56vh;
+        max-height: 56dvh;
+      }
+
+      /* Tighten the bubble so it never grows through the top of the frame.
+         The old padding and 1.8 line-height pushed it out of the studio once
+         the copy wrapped to six or seven lines at phone width. */
+      .bubble-wrap {
+        bottom: 44%;
+        padding: 0 0.5rem;
+      }
+
+      .speech-bubble {
+        font-size: 0.5rem;
+        line-height: 1.5;
+        padding: 0.65rem 0.75rem;
+        border-width: 3px;
+        max-width: 100%;
+        min-height: 44px;
+        /* room for the tail, which sits 12px below the bubble */
+        box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+      }
+
+      .speech-bubble::after {
+        bottom: -12px;
+        border-left-width: 8px;
+        border-right-width: 8px;
+        border-top: 12px solid #0f172a;
+      }
+      .speech-bubble::before {
+        bottom: -8px;
+        border-left-width: 6px;
+        border-right-width: 6px;
+        border-top-width: 9px;
+      }
+
+      .bubble-footer {
+        gap: 0.4rem;
+        margin-top: 0.5rem;
+        padding-top: 0.35rem;
+        flex-wrap: wrap;
+      }
+
+      .source-line,
+      .more-link { font-size: 0.45rem; }
+
+      .anchor { width: 34%; }
+      .anchors { gap: 1.25rem; bottom: 12%; }
+
+      .controls {
+        margin-top: 1rem;
+        gap: 0.5rem;
+      }
+
+      .controls button {
+        font-size: 0.5rem;
+        padding: 0.7rem 0.8rem;
+      }
+
+      footer {
+        margin-top: 0.75rem;
+        font-size: 0.45rem;
+      }
+    }
+
+    /* --- Short viewports: landscape phones --- */
+    @media (max-height: 560px) and (orientation: landscape) {
+      body {
+        justify-content: flex-start;
+        padding: 0.5rem;
+      }
+
+      .studio {
+        aspect-ratio: 16 / 9;
+        max-height: 66vh;
+        max-height: 66dvh;
+      }
+
+      .bubble-wrap { bottom: 43%; }
+      .speech-bubble { min-height: 36px; }
+      .anchors { gap: 0.75rem; }
+
+      .controls {
+        margin-top: 0.6rem;
+        margin-bottom: 0;
+      }
+
+      .controls button {
+        font-size: 0.45rem;
+        padding: 0.5rem 0.7rem;
+      }
+
+      footer {
+        margin-top: 0.4rem;
+        font-size: 0.4rem;
+      }
+    }
+
+    /* Very narrow phones (iPhone SE and similar). */
+    @media (max-width: 380px) {
+      .speech-bubble { font-size: 0.45rem; }
+      .controls button { padding: 0.65rem 0.55rem; font-size: 0.45rem; }
+      .anchor { width: 36%; }
     }
   </style>
 </head>
