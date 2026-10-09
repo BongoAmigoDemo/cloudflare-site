@@ -462,14 +462,15 @@
       catch { return ''; }
     }
 
-    // pubDate arrives either as epoch milliseconds (new rows, and D1 may
-    // serialize them as a string) or as an RFC-822 date string (legacy rows).
-    // new Date('1791210909000') is Invalid Date, which rendered as "NaNd ago".
+    // pubDate arrives as epoch milliseconds, either as a number or as a string
+    // that D1 may render with a trailing ".0", or as an RFC-822 date string for
+    // legacy rows. new Date('1791210909000') is Invalid Date, which rendered as
+    // "NaNd ago", so the numeric form is detected before Date parsing.
     function parseDate(value) {
       if (value === null || value === undefined || value === '') return NaN;
       if (typeof value === 'number') return value;
       const text = String(value).trim();
-      if (/^\d+$/.test(text)) return Number(text);
+      if (/^\d+(\.\d+)?$/.test(text)) return Number(text);
       return new Date(text).getTime();
     }
 
