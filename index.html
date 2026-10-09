@@ -250,7 +250,7 @@
        1280x800). Nudging the sprites down clears it without moving them
        noticeably, since the sprite art starts 10px into the 128px canvas. */
     @media (min-width: 701px) and (min-height: 561px) {
-      .anchors { bottom: 8%; }
+      .anchors { bottom: 6%; }
     }
 
     /* Touch devices have no hover, so never hide the story link behind one. */
@@ -266,9 +266,14 @@
          letterboxing the 16/11 crop produced on narrow screens. */
       .studio {
         aspect-ratio: 4 / 3;
-        max-height: 56vh;
-        max-height: 56dvh;
+        max-height: 62vh;
+        max-height: 62dvh;
       }
+
+      /* A shorter desk shows more of the presenters. At 19% the desk covered
+         the sprites from the shoulders down, leaving roughly 30px of a 79px
+         sprite visible -- just the heads. */
+      .desk { height: 12%; }
 
       /* Tighten the bubble so it never grows through the top of the frame,
          and never reaches down over the anchors' faces. */
@@ -352,9 +357,11 @@
 
       .studio {
         aspect-ratio: 16 / 9;
-        max-height: 62vh;
-        max-height: 62dvh;
+        max-height: 64vh;
+        max-height: 64dvh;
       }
+
+      .desk { height: 12%; }
 
       .bubble-wrap { bottom: 48%; }
 
@@ -451,9 +458,21 @@
       catch { return ''; }
     }
 
-    function timeAgo(dateStr) {
-      if (!dateStr) return '';
-      const diff = Date.now() - new Date(dateStr).getTime();
+    // pubDate arrives either as epoch milliseconds (new rows, and D1 may
+    // serialize them as a string) or as an RFC-822 date string (legacy rows).
+    // new Date('1791210909000') is Invalid Date, which rendered as "NaNd ago".
+    function parseDate(value) {
+      if (value === null || value === undefined || value === '') return NaN;
+      if (typeof value === 'number') return value;
+      const text = String(value).trim();
+      if (/^\d+$/.test(text)) return Number(text);
+      return new Date(text).getTime();
+    }
+
+    function timeAgo(pubDate) {
+      const t = parseDate(pubDate);
+      if (Number.isNaN(t)) return '';
+      const diff = Date.now() - t;
       const hours = Math.floor(diff / 3600000);
       if (hours < 1) return 'just now';
       if (hours < 24) return `${hours}h ago`;
@@ -493,9 +512,11 @@
         moreLink.classList.add('visible');
       });
 
-      // Show "BREAKING" for stories under 2 hours old
-      const ageHours = (Date.now() - new Date(item.pubDate).getTime()) / 3600000;
-      if (ageHours < 2) {
+      // Show "BREAKING" for stories under 2 hours old. Only when the date is
+      // actually parseable, so a bad value cannot claim to be breaking news.
+      const publishedAt = parseDate(item.pubDate);
+      const ageHours = (Date.now() - publishedAt) / 3600000;
+      if (!Number.isNaN(publishedAt) && ageHours < 2) {
         breaking.classList.add('active');
       } else {
         breaking.classList.remove('active');
