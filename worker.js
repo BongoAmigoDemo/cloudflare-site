@@ -231,22 +231,73 @@ function toMillis(dateStr) {
   return Number.isNaN(t) ? null : t;
 }
 
+// Prompt for a spoken television news lede. The summary is not written prose:
+// index.html types it out character by character at 18ms/char inside an 11s
+// story cycle, so the word budget keeps each line readable in roughly 2s.
+// It is captioned dialogue, so it should sound like something an anchor says.
+const ANCHOR_SYSTEM_PROMPT = [
+  'You are a warm, brisk television news anchor reading the AI desk live on air.',
+  'Your lines are spoken aloud by a cartoon presenter, so they must sound like',
+  'speech rather than like an article.',
+  '',
+  'Rules:',
+  '- Very brief and easy to say out loud. Aim for 20-28 words, one or two sentences.',
+  '- Open with a hook, then deliver the key fact. Never bury the lede.',
+  '- Plain spoken English with contractions. Active voice, present tense.',
+  '- Never invent names, numbers, quotes, or causes that are not in the source.',
+  '- If the details are thin, stick to what the headline actually states.',
+  '- Output only the spoken line. No preamble, no quotation marks, no markdown.',
+].join('\n');
+
+function buildAnchorPrompt(title, description) {
+  if (description) {
+    return `Headline: ${title}\nDetails: ${description}\n\nWrite the anchor's spoken introduction for this story.`;
+  }
+  return `Headline: ${title}\n\nThere are no further details, so write the anchor's spoken introduction using only what the headline states.`;
+}
+
+// Models sometimes wrap output in quotes, prefix it with a label, or trail an
+// end-of-turn token. The line is displayed verbatim in the speech bubble and
+// typed out at 18ms/char, so keep it clean and bounded to roughly two seconds.
+function cleanAnchorLine(text) {
+  if (!text) return null;
+  let out = String(text)
+    .replace(/<\/?s>/gi, '')
+    .replace(/^\s*(?:anchor(?:\s*\d+)?|speaker|presenter|narrator)\s*[:\-\u2013]\s*/i, '')
+    .replace(/\s*\n+\s*/g, ' ')
+    .trim();
+
+  // Strip paired wrapping quotes, then any stray quote left between the text
+  // and trailing punctuation (e.g. 'done."'), without eating possessive
+  // apostrophes inside the words themselves.
+  if (/^["\u201c\u2018]/.test(out) && /["\u201d\u2019]$/.test(out)) {
+    out = out.slice(1, -1).trim();
+  }
+  out = out
+    .replace(/[\s"'\u201c\u201d\u2018\u2019]*([.!?])?[\s"'\u201c\u201d\u2018\u2019]*$/, '$1')
+    .trim();
+
+  if (out.length > 220) {
+    const cut = out.slice(0, 220);
+    const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('? '), cut.lastIndexOf('! '));
+    out = (stop > 80 ? cut.slice(0, stop + 1) : cut.trimEnd()).trim();
+  }
+
+  return out || null;
+}
+
 async function generateSummary(title, description, env) {
   if (!env.AI) return null;
-
-  const userContent = description
-    ? `Summarize this article in one clear, concise sentence.\n\nTitle: ${title}\n\nDescription: ${description}`
-    : `Summarize this headline in one clear, concise sentence: "${title}"`;
 
   try {
     const response = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
-        { role: 'system', content: 'You are a news summarizer. Write one factual, concise sentence that captures the key point.' },
-        { role: 'user', content: userContent },
+        { role: 'system', content: ANCHOR_SYSTEM_PROMPT },
+        { role: 'user', content: buildAnchorPrompt(title, description) },
       ],
-      max_tokens: 100,
+      max_tokens: 80,
     });
-    return response.response || null;
+    return cleanAnchorLine(response.response);
   } catch (err) {
     console.error('AI error:', err);
     return null;
