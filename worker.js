@@ -6,6 +6,33 @@ const FEEDS = [
   'https://www.marktechpost.com/feed/',
 ];
 
+// SQL expression that reformats an RFC-822 RSS date ("Fri, 09 Oct 2026 05:06:17 +0000")
+// into "YYYY-MM-DD HH:MM:SS". SQLite's strftime() cannot parse the RFC-822 day
+// name form and returns NULL, so we rebuild the string into a format it accepts.
+// Returns NULL for anything that isn't RFC-822-shaped.
+const RFC822_SORTABLE = `(
+  substr(pub_date,13,4) || '-' ||
+  CASE substr(pub_date,9,3)
+    WHEN 'Jan' THEN '01' WHEN 'Feb' THEN '02' WHEN 'Mar' THEN '03'
+    WHEN 'Apr' THEN '04' WHEN 'May' THEN '05' WHEN 'Jun' THEN '06'
+    WHEN 'Jul' THEN '07' WHEN 'Aug' THEN '08' WHEN 'Sep' THEN '09'
+    WHEN 'Oct' THEN '10' WHEN 'Nov' THEN '11' WHEN 'Dec' THEN '12'
+  END || '-' || substr(pub_date,6,2) || ' ' || substr(pub_date,18,8)
+)`;
+
+// Sortable numeric recency for a row, tolerating both storage forms:
+// epoch millis (integer, new) and RFC-822 text (legacy). Unparseable -> 0.
+const RECENCY_EXPR = `(
+  CASE WHEN typeof(pub_date) = 'integer' THEN pub_date
+       ELSE COALESCE(CAST(strftime('%s', ${RFC822_SORTABLE}) AS INTEGER) * 1000, 0)
+  END
+)`;
+
+// Rows that still hold a legacy RFC-822 string we can convert.
+const NEEDS_MIGRATION = `(
+  typeof(pub_date) = 'text' AND strftime('%s', ${RFC822_SORTABLE}) IS NOT NULL
+)`;
+
 export default {
   // --- Fast read from D1 for the frontend ---
   async fetch(request, env) {
@@ -13,18 +40,18 @@ export default {
 
 if (url.pathname === '/api/news') {
   try {
+    // Order and limit in SQL so we always get the genuinely newest 10 rows.
+    // Sorting in JS after a LIMIT 200 would sort an arbitrary subset.
     const { results } = await env.DB.prepare(
       `SELECT title, link, pub_date AS pubDate, description, source, summary
        FROM articles
-       LIMIT 200`
+       ORDER BY ${RECENCY_EXPR} DESC
+       LIMIT 10`
     ).all();
-
-    // Sort by date in JavaScript (handles RSS date strings correctly)
-    results.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
     return new Response(JSON.stringify({
       count: results.length,
-      items: results.slice(0, 10),
+      items: results,
     }, null, 2), {
       headers: {
         'Content-Type': 'application/json',
@@ -41,14 +68,27 @@ if (url.pathname === '/api/news') {
 }
 
     if (url.pathname === '/api/test-refresh') {
-  await refreshArticles(env);
-  const { results } = await env.DB.prepare(
-    "SELECT COUNT(*) AS total FROM articles"
-  ).all();
-  return new Response(`Refresh complete. ${results[0].total} articles in DB.`, {
-    status: 200,
-  });
-}
+      // This endpoint triggers up to 50 paid AI summaries, so it must never be
+      // callable anonymously. Fail closed if no secret is configured.
+      if (!env.REFRESH_TOKEN) {
+        return new Response('Refresh endpoint disabled: REFRESH_TOKEN is not set.', {
+          status: 503,
+        });
+      }
+
+      const provided = request.headers.get('X-Refresh-Token') || url.searchParams.get('token');
+      if (provided !== env.REFRESH_TOKEN) {
+        return new Response('Unauthorized.', { status: 401 });
+      }
+
+      await refreshArticles(env);
+      const { results } = await env.DB.prepare(
+        "SELECT COUNT(*) AS total FROM articles"
+      ).all();
+      return new Response(`Refresh complete. ${results[0].total} articles in DB.`, {
+        status: 200,
+      });
+    }
 
     return env.ASSETS.fetch(request);
   },
@@ -111,7 +151,7 @@ async function refreshArticles(env) {
         if (description.length > 600) description = description.slice(0, 600) + '...';
 
         if (title && link) {
-          allItems.push({ title, link, pubDate, description, source: feedUrl });
+          allItems.push({ title, link, pubDate, pubMs: toMillis(pubDate), description, source: feedUrl });
         }
       }
     } catch (err) {
@@ -120,8 +160,13 @@ async function refreshArticles(env) {
   }
 
   // Sort and take the top 50 (so we don't summarize old news)
-  allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+  allItems.sort((a, b) => (b.pubMs || 0) - (a.pubMs || 0));
   const top = allItems.slice(0, 50);
+
+  if (top.length === 0) {
+    console.log('Refresh: no feed items parsed, skipping.');
+    return;
+  }
 
   // Find which ones we've already summarized
   const urls = top.map(i => i.link);
@@ -145,7 +190,7 @@ async function refreshArticles(env) {
           `INSERT OR IGNORE INTO articles (url, title, link, pub_date, description, source, summary)
            VALUES (?, ?, ?, ?, ?, ?, ?)`
         ).bind(
-          item.link, item.title, item.link, item.pubDate,
+          item.link, item.title, item.link, item.pubMs ?? item.pubDate,
           item.description, item.source, summary
         ).run();
       } catch (err) {
@@ -154,12 +199,36 @@ async function refreshArticles(env) {
     }));
   }
 
-  // Cleanup: keep only the most recent 500 articles
+  // One-time style migration: upgrade legacy RFC-822 pub_date strings to epoch
+  // millis, bounded per run so the transition is gradual and cost-predictable.
+  try {
+    await env.DB.prepare(
+      `UPDATE articles SET pub_date = CAST(strftime('%s', ${RFC822_SORTABLE}) AS INTEGER) * 1000
+       WHERE url IN (
+         SELECT url FROM articles
+         WHERE ${NEEDS_MIGRATION}
+         LIMIT 100
+       )`
+    ).run();
+  } catch (err) {
+    console.error('pub_date migration failed:', err);
+  }
+
+  // Cleanup: keep only the most recent 500 articles, newest first.
   await env.DB.prepare(
     `DELETE FROM articles WHERE url NOT IN (
-      SELECT url FROM articles ORDER BY pub_date DESC LIMIT 500
-    )`
+       SELECT url FROM articles
+       ORDER BY ${RECENCY_EXPR} DESC
+       LIMIT 500
+     )`
   ).run();
+}
+
+// Parse an RSS date string into epoch millis. Returns null if unparseable.
+function toMillis(dateStr) {
+  if (!dateStr) return null;
+  const t = new Date(dateStr).getTime();
+  return Number.isNaN(t) ? null : t;
 }
 
 async function generateSummary(title, description, env) {
