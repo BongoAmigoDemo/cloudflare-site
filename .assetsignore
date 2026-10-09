@@ -1,0 +1,27 @@
+# Files under [assets] directory = "./" are published on the public internet.
+# Only browser-facing files belong there, so exclude everything else.
+#
+# Nothing here is a credential: wrangler.toml holds a D1 database UUID, not a
+# secret. But publishing the Worker source, the Wrangler config, and the .git
+# metadata hands out implementation detail for no benefit.
+#
+# Syntax is .gitignore style. Patterns are matched against paths relative to
+# the assets directory, so a leading slash anchors them at the root.
+
+# Git metadata. Without this the whole .git directory is uploaded and
+# /.git/config is served (confirmed live before this file existed).
+/.git
+
+# Repository housekeeping
+/.gitignore
+/README.md
+/.DS_Store
+
+# Worker and deployment configuration
+/worker.js
+/wrangler.toml
+
+# Wrangler's own defaults; ignored by default, listed for clarity
+/.assetsignore
+/_redirects
+/_headers
