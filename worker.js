@@ -21,9 +21,20 @@ const RFC822_SORTABLE = `(
 )`;
 
 // Sortable numeric recency for a row, tolerating both storage forms:
-// epoch millis (integer, new) and RFC-822 text (legacy). Unparseable -> 0.
+// Sortable numeric recency for a row, in epoch millis. Three storage shapes
+// occur in practice:
+//   - a real INTEGER
+//   - numeric millis held as TEXT, because the column is declared TEXT and
+//     binding a JS number stores it as a string ("1791530616000" or ".0")
+//   - a legacy RFC-822 date string
+// The middle case is the important one: it reports typeof 'text', so an
+// integer-only check falls through to the RFC-822 parser, fails, and returns 0
+// for EVERY row. Sorting then becomes arbitrary and the API serves stale
+// stories. GLOB distinguishes the numeric form before the date parser sees it.
+// Unparseable -> 0, which also makes retention evict those rows first.
 const RECENCY_EXPR = `(
   CASE WHEN typeof(pub_date) = 'integer' THEN pub_date
+       WHEN substr(pub_date, 1, 18) GLOB '[0-9]*' THEN CAST(pub_date AS REAL)
        ELSE COALESCE(CAST(strftime('%s', ${RFC822_SORTABLE}) AS INTEGER) * 1000, 0)
   END
 )`;
