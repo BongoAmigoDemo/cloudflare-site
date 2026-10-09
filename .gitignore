@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Wrangler
+.wrangler/
+.dev.vars
+.wrangler.toml
+
+# Secrets — never commit these
+*.token
+*deploy-token*
+.dsh-push-token
+.cf-deploy-token
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
