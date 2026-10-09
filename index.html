@@ -450,7 +450,11 @@
     const pauseBtn = document.getElementById('pauseBtn');
     const bubbleWrap = document.querySelector('.bubble-wrap');
 
-    const CYCLE_MS = 11000;
+    // Pacing. A story now stays on screen for as long as its line takes to
+    // type, plus a fixed dwell, instead of a fixed 11s slot that could cut the
+    // dialogue off mid-sentence.
+    const TYPE_MS = 18;    // per character
+    const DWELL_MS = 4500; // how long the finished line is held
 
     function sourceName(url) {
       if (!url) return '';
@@ -507,9 +511,12 @@
       moreLink.href = item.link || '#';
       moreLink.textContent = "And here's your browser with the story →";
 
-      // Type out the dialogue, then reveal the link
-      typeText(text, 18, () => {
+      // Type out the dialogue, then reveal the link and schedule the next
+      // story. Advancing from here rather than from a fixed wall-clock
+      // interval means a story is never swapped out mid-sentence.
+      typeText(text, TYPE_MS, () => {
         moreLink.classList.add('visible');
+        scheduleNext(text);
       });
 
       // Show "BREAKING" for stories under 2 hours old. Only when the date is
@@ -547,26 +554,34 @@ function typeText(text, speedMs, onComplete) {
       showStory(currentIndex);
     }
 
-    function startCycle() {
-      clearInterval(cycleTimer);
-      cycleTimer = setInterval(() => {
-        if (!paused) nextStory();
-      }, CYCLE_MS);
+    // How long a line may stay on screen. The parameter is the text currently
+    // being typed, not the story about to be shown.
+    function scheduleNext(typedText) {
+      clearTimeout(cycleTimer);
+      if (paused) return;
+      const typingMs = (typedText ? typedText.length : 0) * TYPE_MS;
+      cycleTimer = setTimeout(() => {
+        if (paused) return;
+        nextStory();
+      }, typingMs + DWELL_MS);
     }
 
     document.getElementById('nextBtn').addEventListener('click', () => {
       nextStory();
-      startCycle();
     });
 
     document.getElementById('prevBtn').addEventListener('click', () => {
       prevStory();
-      startCycle();
     });
 
     pauseBtn.addEventListener('click', () => {
       paused = !paused;
       pauseBtn.textContent = paused ? '▶ RESUME' : '⏸ PAUSE';
+      if (paused) {
+        clearTimeout(cycleTimer);
+      } else {
+        scheduleNext(dialogue.textContent);
+      }
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -581,8 +596,8 @@ function typeText(text, speedMs, onComplete) {
           return;
         }
 
+        // showStory types the line and schedules the next story itself.
         showStory(0);
-        startCycle();
       } catch (err) {
         console.error(err);
         dialogue.textContent = 'Signal lost. Unable to fetch the news.';
